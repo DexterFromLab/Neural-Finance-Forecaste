@@ -1,47 +1,83 @@
 # Import bibliotek
 import numpy as np
-import sklearn as sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
 from utils import neuralModel, readCsvData, sliceData
 
-# Zdefiniowanie wielkości wektora na wejściu i wyjściu sieci
-INPUT_LAYER_SIZE = 100
-OUTPUT_LAYER_SIZE = 10
 
-# Wczytanie danych historycznych
-dates, values = readCsvData.load_data("C:\\Users\\barto\\Desktop\\dane historyczne\\wig20_d_lasts.csv")
+def neural_network_training_with_mse(input_layer_size: int, output_layer_size: int, first_layer_size: int,
+                                     second_layer_size: int, train_epochs) -> float:
+    # Zdefiniowanie wielkości wektora na wejściu i wyjściu sieci
 
-# Ustandaryzowanie danych
-scaler = sklearn.preprocessing.MinMaxScaler()
-values = np.array(values).reshape(-1, 1)
-# Skalowanie danych
-scaled_data = scaler.fit_transform(values).flatten().tolist()
+    # Wczytanie danych historycznych
+    dates, values = readCsvData.load_data("resources/wig20_d_lasts.csv")
 
-# Przygotowanie danych do nauki i testowania 10 odczytów gieldowych na wejście i 11-sty jako przewidywany wynik
-scaled_data_input, scaled_data_output = sliceData.prepareTrainData(INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE, scaled_data)
+    # Ustandaryzowanie danych
+    scaler = MinMaxScaler()
+    values = np.array(values).reshape(-1, 1)
+    # Skalowanie danych
+    scaled_data = scaler.fit_transform(values).flatten().tolist()
 
-scaled_train_data_input, scaled_test_data_input = train_test_split(scaled_data_input, test_size= 0.2, shuffle= False)
-scaled_train_data_output, scaled_test_data_output = train_test_split(scaled_data_output, test_size= 0.2, shuffle= False)
+    # Przygotowanie danych do nauki i testowania 10 odczytów gieldowych na wejście i 11-sty jako przewidywany wynik
+    scaled_data_input, scaled_data_output = sliceData.prepareTrainData(input_layer_size, output_layer_size, scaled_data)
 
-# Kompilacja modelu
-model = neuralModel.createModel(INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE)
+    scaled_train_data_input, scaled_test_data_input = train_test_split(scaled_data_input, test_size=0.2, shuffle=False)
+    scaled_train_data_output, scaled_test_data_output = train_test_split(scaled_data_output, test_size=0.2,
+                                                                         shuffle=False)
 
-# Uczenie sieci
-history = model.fit(scaled_train_data_input, scaled_train_data_output, epochs=200, batch_size=1, verbose=2)
+    # Kompilacja modelu
+    model = neuralModel.createModel(input_layer_size, output_layer_size, first_layer_size, second_layer_size)
 
-# Ocena dokładności na danych testowych
-scaled_predicted_data_output = model.predict(scaled_test_data_input)
-predicted_data_output = scaler.inverse_transform(np.array(scaled_predicted_data_output))
-test_data_output = scaler.inverse_transform(np.array(scaled_test_data_output))
-for test_data_index in range(len(predicted_data_output)):
-    print(f"Przewidywany wynik: {predicted_data_output[test_data_index]}, dane historyczne: {test_data_output[test_data_index]}\n")
+    # Uczenie sieci
+    history = model.fit(scaled_train_data_input, scaled_train_data_output, epochs=train_epochs, batch_size=1, verbose=2)
 
-# Predykcja najbliższej wartości
-new_scalled_predicted_value = model.predict(np.array(scaled_data[-INPUT_LAYER_SIZE:]).reshape(1, -1))
-print(f"Ostatnia wartość historyczna: {scaler.inverse_transform(np.array(scaled_data[-1:]).reshape(-1,1))}")
-new_predicted_value = scaler.inverse_transform(new_scalled_predicted_value)
-print(f"Najbliższa przewidywana wartość: {new_predicted_value}")
+    # Ocena dokładności na danych testowych
+    scaled_predicted_data_output = model.predict(scaled_test_data_input)
+    predicted_data_output = scaler.inverse_transform(np.array(scaled_predicted_data_output))
+    test_data_output = scaler.inverse_transform(np.array(scaled_test_data_output))
+    for test_data_index in range(len(predicted_data_output)):
+        print(
+            f"Przewidywany wynik: {predicted_data_output[test_data_index]}, dane historyczne: {test_data_output[test_data_index]}\n")
 
-# Obliczamy MSE
-mse = np.mean((np.array(test_data_output).flatten() - np.array(predicted_data_output).flatten()) ** 2)
-print("MSE:", mse)
+    # Predykcja najbliższej wartości
+    new_scalled_predicted_value = model.predict(np.array(scaled_data[-input_layer_size:]).reshape(1, -1))
+    print(f"Ostatnia wartość historyczna: {scaler.inverse_transform(np.array(scaled_data[-1:]).reshape(-1, 1))}")
+    new_predicted_value = scaler.inverse_transform(new_scalled_predicted_value)
+    print(f"Najbliższa przewidywana wartość: {new_predicted_value}")
+
+    # Obliczamy MSE
+    mse_sum = 0
+    for i in range(len(predicted_data_output)):
+        mse = np.mean((np.array(test_data_output[i]) - np.array(predicted_data_output[i])) ** 2)
+        mse_sum += mse
+
+    print(f"Suma MSE dla testów: {mse_sum}")
+
+    return mse_sum
+
+
+def main():
+    results = []
+
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 1))
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 10))
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 100))
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 1000))
+
+    # results.append(neural_network_training_with_mse(100, 10, 16, 16, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 32, 32, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 32, 64, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 64, 32, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 64, 16, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 128, 16, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 256, 16, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 512, 16, 200))
+    # results.append(neural_network_training_with_mse(100, 10, 1024, 16, 200))
+
+    for i in range(len(results)):
+        print(f"Wynik dla sieci: {results[i]}")
+
+
+if __name__ == "__main__":
+    main()
