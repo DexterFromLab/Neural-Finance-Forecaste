@@ -1,12 +1,8 @@
 # Import bibliotek
 import numpy as np
-import sklearn
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
-import readCsvData
-import sliceData
-import neuralModel
-from scipy.stats import stats
+import sklearn as sklearn
+
+from utils import neuralModel, readCsvData, sliceData
 
 # Zdefiniowanie wielkości wektora na wejściu i wyjściu sieci
 INPUT_LAYER_SIZE = 100
@@ -46,10 +42,6 @@ print(f"Ostatnia wartość historyczna: {scaler.inverse_transform(np.array(scale
 new_predicted_value = scaler.inverse_transform(new_scalled_predicted_value)
 print(f"Najbliższa przewidywana wartość: {new_predicted_value}")
 
-correlation = stats.spearmanr(np.array(test_data_output).flatten(), np.array(predicted_data_output).flatten()).correlation
-
-print(f"Współczynnik korelacji: {correlation}")
-
-
-
-
+# Obliczamy MSE
+mse = np.mean((np.array(test_data_output).flatten() - np.array(predicted_data_output).flatten()) ** 2)
+print("MSE:", mse)
