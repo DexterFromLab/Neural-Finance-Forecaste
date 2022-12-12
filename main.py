@@ -1,13 +1,18 @@
 # Import bibliotek
+from typing import List
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from utils import neuralModel, readCsvData, sliceData
+from model import neuralModel
+from model.ActivationFunction import ActivationFunction
+from model.HiddenLayer import HiddenLayer
+from utils import readCsvData, sliceData
 
 
 def neural_network_training_with_mse(input_layer_size: int, output_layer_size: int, first_layer_size: int,
-                                     second_layer_size: int, train_epochs) -> float:
+                                     second_layer_size: int, train_epochs, hidden_layers: List[HiddenLayer]) -> float:
     # Zdefiniowanie wielkości wektora na wejściu i wyjściu sieci
 
     # Wczytanie danych historycznych
@@ -27,7 +32,7 @@ def neural_network_training_with_mse(input_layer_size: int, output_layer_size: i
                                                                          shuffle=False)
 
     # Kompilacja modelu
-    model = neuralModel.createModel(input_layer_size, output_layer_size, first_layer_size, second_layer_size)
+    model = neuralModel.createModel(input_layer_size, output_layer_size, hidden_layers)
 
     # Uczenie sieci
     history = model.fit(scaled_train_data_input, scaled_train_data_output, epochs=train_epochs, batch_size=1, verbose=2)
@@ -60,20 +65,12 @@ def neural_network_training_with_mse(input_layer_size: int, output_layer_size: i
 def main():
     results = []
 
-    results.append(neural_network_training_with_mse(100, 10, 32, 32, 1))
-    results.append(neural_network_training_with_mse(100, 10, 32, 32, 10))
-    results.append(neural_network_training_with_mse(100, 10, 32, 32, 100))
-    results.append(neural_network_training_with_mse(100, 10, 32, 32, 1000))
+    hidden_layers = [HiddenLayer(hidden_layer_size=32, activation=ActivationFunction.RELU),
+                     HiddenLayer(hidden_layer_size=32, activation=ActivationFunction.TANH)]
 
-    # results.append(neural_network_training_with_mse(100, 10, 16, 16, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 32, 32, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 32, 64, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 64, 32, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 64, 16, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 128, 16, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 256, 16, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 512, 16, 200))
-    # results.append(neural_network_training_with_mse(100, 10, 1024, 16, 200))
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 1, hidden_layers))
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 10, hidden_layers))
+    results.append(neural_network_training_with_mse(100, 10, 32, 32, 100, hidden_layers))
 
     for i in range(len(results)):
         print(f"Wynik dla sieci: {results[i]}")
