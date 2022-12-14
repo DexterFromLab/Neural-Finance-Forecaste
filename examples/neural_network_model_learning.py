@@ -9,14 +9,15 @@ from model import neuralModel
 from model.ActivationFunction import ActivationFunction
 from model.HiddenLayer import HiddenLayer
 from utils import readCsvData, sliceData
-
+import numpy as np
+from deap.tools import cxTwoPoint
 
 def neural_network_training_with_mse(input_layer_size: int, output_layer_size: int, first_layer_size: int,
                                      second_layer_size: int, train_epochs, hidden_layers: List[HiddenLayer]) -> float:
     # Zdefiniowanie wielkości wektora na wejściu i wyjściu sieci
 
     # Wczytanie danych historycznych
-    dates, values = readCsvData.load_data("resources/wig20_d_lasts.csv")
+    dates, values = readCsvData.load_data("../resources/wig20_d_lasts.csv")
 
     # Ustandaryzowanie danych
     scaler = MinMaxScaler()
